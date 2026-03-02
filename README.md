@@ -82,21 +82,32 @@ brew tap electrikmilk/cherri && brew install electrikmilk/cherri/cherri
 cherri agent.cherri        # → 小助手.shortcut
 cherri get-skills.cherri   # → 获取AI技能列表.shortcut
 cherri search-web.cherri   # → ReadWebpage.shortcut
+cherri run-shell.cherri    # → RunShell.shortcut
 ```
 
-编译后双击 `.shortcut` 文件导入快捷指令 App，将 `ReadWebpage` 等 Skill 放入 `ai-skills` 文件夹。
+编译后双击 `.shortcut` 文件导入快捷指令 App，将 `ReadWebpage`、`RunShell` 等 Skill 放入 `ai-skills` 文件夹。
 
 > **注意：** `ReadWebpage` 导入后需在快捷指令 App 中手动修改：找到「获取URL内容」步骤，将 JSON body 中的 `REPLACE_WITH_INPUT` 替换为实际的 `input` 变量。这是因为 Cherri 编译器将字典字面量按 JSON 解析，不支持在字典值中使用变量，但快捷指令 App 本身支持。
 
-### 手动创建「问豆包Agent」
+### 手动创建快捷指令
 
-此快捷指令使用了豆包 App 的第三方 Action，无法用 Cherri 编写，需在快捷指令 App 中手动创建：
+以下快捷指令使用了第三方 App Action，无法用 Cherri 编写，需在快捷指令 App 中手动创建：
+
+**问豆包Agent**
 
 1. 新建快捷指令，命名为 **问豆包Agent**
 2. 添加豆包 App 的「问豆包」Action，输入设为「快捷指令输入」
 3. 添加「停止并输出」，输出问豆包的回复
 
+**RunShell**
+
+1. 新建快捷指令，命名为 **RunShell**
+2. 添加 a-Shell 的「Execute Command」Action，命令设为「快捷指令输入」
+3. 添加「停止并输出」，输出执行结果
+
 ### 前置条件
 
 - iPhone 上安装 [豆包 App](https://apps.apple.com/app/id6473141554) 并启用其快捷指令动作
+- iPhone 上安装 [a-Shell](https://apps.apple.com/app/id1473805438)
+- 注册 [LangSearch](https://langsearch.com) 获取 API Key（免费），填入 `search-web.cherri` 中的 `YOUR_LANGSEARCH_API_KEY`
 - 在快捷指令 App 中创建 `ai-skills` 文件夹

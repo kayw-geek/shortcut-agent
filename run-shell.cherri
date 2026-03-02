@@ -1,0 +1,30 @@
+/*
+ * AI Skill: RunShell
+ *
+ * General-purpose shell executor via a-Shell app.
+ * Gives the Agent ability to run commands, scripts, and call APIs.
+ *
+ * Requires:
+ *   1. a-Shell app installed
+ *   2. Helper shortcut "RunShell" (manual creation)
+ *
+ * describe convention:
+ *   input "describe" -> return JSON skill declaration
+ *   otherwise        -> execute command via RunShell helper
+ */
+
+#define name RunShell
+#define glyph lightningBolt
+#define color gray
+
+#include 'actions/shortcuts'
+
+@input = "{ShortcutInput}"
+
+if input == "describe" {
+    @desc = '{"name":"RunShell","desc":"在iPhone上执行shell命令并返回结果。可用能力：1)curl调用任意API 2)python3执行Python脚本 3)标准Unix工具(grep/sed/awk/jq等) 4)文件读写。传入单行命令或多行脚本均可。适合需要数据处理、API调用、计算等场景。","input":"shell命令或脚本","output":"命令执行的stdout输出"}'
+    output("{desc}")
+} else {
+    @result = run("RunShell", input)
+    output("{result}")
+}
