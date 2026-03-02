@@ -1,6 +1,12 @@
 /*
  * AI Skill: ReadWebpage
  *
+ * Search: LangSearch Web Search API (keyword -> results with URLs + summary)
+ * Read:   getWebpageContents (URL -> page content)
+ *
+ * ⚠️ After compiling, open in Shortcuts app and replace
+ *    "REPLACE_WITH_INPUT" in the JSON body with the actual input variable.
+ *
  * describe convention:
  *   input "describe" -> return JSON skill declaration
  *   otherwise        -> normal execution
@@ -11,23 +17,28 @@
 #define color blue
 
 #include 'actions/web'
+#include 'actions/text'
 
 @input = "{ShortcutInput}"
 
 if input == "describe" {
-    @desc = '{"name":"ReadWebpage","desc":"搜索或读取网页。传入关键词会自动搜索，传入URL会直接读取。拿到搜索结果后，可以从中选择具体URL再次调用获取详细内容，可反复调用直到信息充足。","input":"关键词或URL","output":"网页正文文本"}'
+    @desc = '{"name":"ReadWebpage","desc":"搜索或读取网页。传入关键词返回搜索结果(含完整URL、标题、摘要)，传入URL返回网页正文。可用搜索结果中的URL再次调用获取详情，反复调用直到信息充足。","input":"关键词或URL","output":"搜索结果或网页正文"}'
     output("{desc}")
 } else {
-    @url = "{input}"
     @hasScheme = false
     if input beginsWith "http" {
         @hasScheme = true
     }
     if hasScheme == false {
-        @encoded = urlEncode(input)
-        @url = "https://cn.bing.com/search?q={encoded}"
+        // LangSearch API - replace "REPLACE_WITH_INPUT" with input variable in Shortcuts app
+        const result = jsonRequest("https://api.langsearch.com/v1/web-search", 'POST', {"query": "REPLACE_WITH_INPUT", "summary": true, "count": 5}, {"Authorization": "Bearer YOUR_LANGSEARCH_API_KEY"})
+        @body = "{result}"
+        output("{body}")
+    } else {
+        // Direct URL: unescape JSON-escaped slashes and read page content
+        @cleanUrl = replaceText('\/', '/', input)
+        const page = getWebpageContents(cleanUrl)
+        @body = "{page}"
+        output("Source: {cleanUrl}\n\n{body}")
     }
-    const page = getArticle(url)
-    @body = getArticleDetail(page, "Body")
-    output("Source: {url}\n\n{body}")
 }

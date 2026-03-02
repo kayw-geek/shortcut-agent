@@ -86,6 +86,8 @@ cherri search-web.cherri   # → ReadWebpage.shortcut
 
 编译后双击 `.shortcut` 文件导入快捷指令 App，将 `ReadWebpage` 等 Skill 放入 `ai-skills` 文件夹。
 
+> **注意：** `ReadWebpage` 导入后需在快捷指令 App 中手动修改：找到「获取URL内容」步骤，将 JSON body 中的 `REPLACE_WITH_INPUT` 替换为实际的 `input` 变量。这是因为 Cherri 编译器将字典字面量按 JSON 解析，不支持在字典值中使用变量，但快捷指令 App 本身支持。
+
 ### 手动创建「问豆包Agent」
 
 此快捷指令使用了豆包 App 的第三方 Action，无法用 Cherri 编写，需在快捷指令 App 中手动创建：
