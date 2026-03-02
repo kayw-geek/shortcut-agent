@@ -15,7 +15,7 @@
 @input = "{ShortcutInput}"
 
 if input == "describe" {
-    @desc = '{"name":"ReadWebpage","desc":"读取指定URL的网页正文内容","input":"URL地址","output":"网页标题和正文文本"}'
+    @desc = '{"name":"ReadWebpage","desc":"读取URL返回网页正文。如果用户没有提供URL，你应该先构造搜索引擎URL(如 https://www.google.com/search?q=关键词，关键词需URL编码)来搜索。拿到搜索结果后，你可以从中选择具体链接再次调用本skill获取详细内容。可反复调用直到信息充足。","input":"完整的URL地址","output":"网页正文文本"}'
     output("{desc}")
 } else {
     const page = getArticle(input)
