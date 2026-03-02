@@ -1,0 +1,24 @@
+/*
+ * AI Skill: ReadWebpage
+ *
+ * describe convention:
+ *   input "describe" -> return JSON skill declaration
+ *   otherwise        -> normal execution
+ */
+
+#define name ReadWebpage
+#define glyph globe
+#define color blue
+
+#include 'actions/web'
+
+@input = "{ShortcutInput}"
+
+if input == "describe" {
+    @desc = '{"name":"ReadWebpage","desc":"读取指定URL的网页正文内容","input":"URL地址","output":"网页标题和正文文本"}'
+    output("{desc}")
+} else {
+    const page = getArticle(input)
+    @body = getArticleDetail(page, "Body")
+    output("Source: {input}\n\n{body}")
+}

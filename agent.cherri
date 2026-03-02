@@ -1,0 +1,130 @@
+/*
+ * Shortcut Agent
+ *
+ * Voice-driven AI agent for iPhone.
+ * Flow: Wake -> Voice Input -> LLM (问豆包) -> Execute Skills -> Loop
+ *
+ * Prerequisites:
+ *   1. Create folder "ai-skills" in Shortcuts app, put skill shortcuts inside
+ *   2. Each skill must implement "describe" protocol (return JSON declaration)
+ *   3. Create helper shortcut "获取AI技能列表"
+ *   4. Create helper shortcut "问豆包Agent"
+ *   5. Install 豆包 app and enable its Shortcuts actions
+ */
+
+#define name 小助手
+#define glyph brain
+#define color purple
+
+#include 'actions/text'
+#include 'actions/scripting'
+#include 'actions/shortcuts'
+
+// =====================================================
+// 1. Auto-merge Skills from "ai-skills" folder
+// =====================================================
+// 获取AI技能列表 calls each skill with "describe",
+// returns one JSON per line:
+//   - {"name":"ReadWebpage","desc":"...","input":"...","output":"..."}
+//   - {"name":"SendMessage","desc":"...","input":"...","output":"..."}
+
+@noInput = ""
+const skillsText = run("获取AI技能列表", noInput)
+
+// =====================================================
+// 2. Build System Prompt
+// =====================================================
+
+@ex1 = '{"type":"tool_call","tool":"skill的name","input":"传给skill的参数","message":"对用户说的话（可选）"}'
+@ex2 = '{"type":"ask","message":"你的追问内容"}'
+@ex3 = '{"type":"answer","message":"你的最终回答"}'
+
+@sp = "你是一个运行在 iPhone 上的语音助手。你可以通过调用 Skills 来完成用户的请求。\n\n"
+@sp += "## Skills\n"
+@sp += "每个 skill 用 JSON 描述，字段含义：\n"
+@sp += "- name: skill 的唯一标识，调用时填入 tool 字段\n"
+@sp += "- desc: skill 的功能说明\n"
+@sp += "- input: skill 接收的参数格式\n"
+@sp += "- output: skill 返回的数据格式\n\n"
+@sp += "{skillsText}\n\n"
+@sp += "## 响应格式\n"
+@sp += "你必须以 JSON 格式回复，不要输出 JSON 以外的任何内容。格式如下：\n\n"
+@sp += "当你需要调用 skill 时：\n{ex1}\n"
+@sp += "- tool 必须是上面 Skills 列表中某个 skill 的 name 值，不可编造\n"
+@sp += "- input 按该 skill 声明的 input 格式传参\n\n"
+@sp += "当你需要向用户追问时：\n{ex2}\n\n"
+@sp += "当你可以直接回答时：\n{ex3}\n\n"
+@sp += "## 规则\n"
+@sp += "- 每次只返回一个 JSON 对象\n"
+@sp += "- 如果用户的请求不需要调用任何 skill，直接用 answer 类型回复\n"
+@sp += "- 调用 skill 后你会收到返回结果，基于结果决定下一步\n"
+
+// =====================================================
+// 3. Voice Wake -> Listen
+// =====================================================
+
+speak("你好，有什么可以帮你的？")
+const userVoice = listen("After Pause")
+@conversation = "用户: {userVoice}"
+
+// =====================================================
+// 4. Main Agent Loop
+// =====================================================
+
+repeat turn for 20 {
+    @fullPrompt = "{sp}\n\n{conversation}"
+
+    // Call LLM via helper shortcut
+    @llmResponse = run("问豆包Agent", fullPrompt)
+
+    // Strip markdown code fences
+    @empty = ""
+    @cleaned = replaceText('```json', empty, llmResponse)
+    @cleaned = replaceText('```', empty, cleaned)
+    @cleaned = trimWhitespace(cleaned)
+
+    @conversation += "\n助手: {cleaned}"
+
+    // Parse JSON
+    @parsed = getDictionary(cleaned)
+    if !parsed {
+        speak("抱歉，回复格式有误，请重试。")
+        stop()
+    }
+
+    @rawType = getValue(parsed, "type")
+    @responseType = "{rawType}"
+    @rawMsg = getValue(parsed, "message")
+    @responseMsg = "{rawMsg}"
+
+    // ---- tool_call: run a skill by name ----
+    if responseType == "tool_call" {
+        // tool = skill's name field, input = parameter for the skill
+        @rawTool = getValue(parsed, "tool")
+        @toolName = "{rawTool}"
+        @rawInput = getValue(parsed, "input")
+        @toolInput = "{rawInput}"
+
+        if responseMsg {
+            speak("{responseMsg}")
+        }
+
+        @toolResult = run("{toolName}", toolInput)
+        @conversation += "\ntool_result: {toolResult}"
+    }
+
+    // ---- ask: follow-up question ----
+    if responseType == "ask" {
+        speak("{responseMsg}")
+        @followUp = listen("After Pause")
+        @conversation += "\n用户: {followUp}"
+    }
+
+    // ---- answer: final response ----
+    if responseType == "answer" {
+        speak("{responseMsg}")
+        stop()
+    }
+}
+
+speak("对话已达到最大轮次，请重新启动。")

@@ -1,0 +1,29 @@
+/*
+ * Helper: 获取AI技能列表
+ *
+ * For each shortcut in "ai-skills" folder,
+ * call it with "describe" to get its detail,
+ * then merge all details into one text.
+ */
+
+#define name 获取AI技能列表
+#define glyph folder
+#define color green
+
+#include 'actions/shortcuts'
+#include 'actions/scripting'
+
+const allShortcuts = getShortcuts()
+@skillsList = ""
+@describeCmd = "describe"
+
+for shortcut in allShortcuts {
+    @name = getShortcutDetail(shortcut, "Name")
+    @folder = getShortcutDetail(shortcut, "Folder")
+    if folder == "ai-skills" {
+        @detail = run(name, describeCmd)
+        @skillsList += "- {detail}\n"
+    }
+}
+
+output(skillsList)
